@@ -359,7 +359,7 @@ export const purchaseCredits = async (req: Request, res: Response) => {
 
         const userId = req.userId;
         const { planId } = req.body as { planId: keyof typeof plans }
-        const origin = req.headers.origin as string;
+        const origin = (Array.isArray(req.headers.origin) ? req.headers.origin[0] : req.headers.origin) || '';
 
         const plan: Plan = plans[planId]
 
