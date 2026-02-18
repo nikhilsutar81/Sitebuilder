@@ -4,15 +4,6 @@
     "NODE_ENV": "production"
   },
   "buildCommand": "npm install --prefix server && npm run build --prefix server && npm install --prefix client && npm run build --prefix client",
-  "outputDirectory": "client/dist",
-  "public": "client/dist",
-  "functions": {
-    "api/**/*.ts": {
-      "runtime": "nodejs18.x",
-      "memory": 1024,
-      "maxDuration": 30
-    }
-  },
   "routes": [
     {
       "src": "^/api/(.*)",
