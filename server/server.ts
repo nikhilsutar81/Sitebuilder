@@ -10,6 +10,20 @@ import { stripeWebhook } from './controllers/stripeWebhook.js';
 
 const app = express();
 
+// Simple request logger to diagnose unexpected 500s in serverless
+app.use((req, res, next) => {
+    console.log(`Incoming request: ${req.method} ${req.url}`);
+    next();
+});
+
+// Log unhandled errors to help diagnose serverless crashes
+process.on('unhandledRejection', (reason) => {
+    console.error('Unhandled Rejection:', reason);
+});
+process.on('uncaughtException', (err) => {
+    console.error('Uncaught Exception:', err);
+});
+
 const corsOptions = {
     origin: process.env.TRUSTED_ORIGINS?.split(',') || [],
     credentials: true,
@@ -17,6 +31,11 @@ const corsOptions = {
 
 app.use(cors(corsOptions))
 app.post('/api/stripe', express.raw({type: 'application/json'}), stripeWebhook)
+
+// Serve a no-content favicon to avoid extra function invocations for missing asset
+app.get('/favicon.ico', (req: Request, res: Response) => {
+    res.status(204).end();
+});
 
 // Cache the auth handler so we don't re-import on every request
 let _cachedAuthHandler: any = null;
@@ -56,6 +75,13 @@ app.get('/', (req: Request, res: Response) => {
 
 app.use('/api/user', userRouter);
 app.use('/api/project', projectRouter);
+
+// Global error handler to prevent crashes and log stack traces
+app.use((err: any, req: Request, res: Response, next: any) => {
+    console.error('Express error handler caught:', err?.stack || err);
+    if (res.headersSent) return next(err);
+    res.status(500).json({ message: 'Internal Server Error' });
+});
 
 // Export app for Vercel serverless
 export default app;
